@@ -4,6 +4,8 @@ This application is a desktop tool that allows you to generate code snippets usi
 
 It aims to help users learn and reinforce coding concepts by actively typing the code instead of just copy-pasting.
 
+![Code Ghost Demo](assets/introduction.gif)
+
 ## ✨ Features
 
 *   **AI Code Generation:** Send requests to the Google Gemini API (currently using the `gemini-1.5-flash` model) to generate code in your desired language and topic.
