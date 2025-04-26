@@ -85,4 +85,36 @@ Gizli textarea:
   overflow: hidden; /* Kaydırma çubuğu olmasın */
   white-space: pre; /* Girdinin pre gibi davranmasını sağla */
   box-sizing: border-box;
+}
+
+/* Kopyala Butonu */
+.copy-button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: #4a505a; /* Koyu gri buton */
+  color: #abb2bf; /* Açık renk yazı */
+  border: 1px solid #6b7280;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8em;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.copy-button:hover {
+  opacity: 1;
+}
+
+/* Kod tamamlandığında konteyner stili */
+.code-editor-container.completed {
+   /* border: 1px solid #66bb6a;  Yeşil kenarlık (isteğe bağlı) */
+   cursor: default; /* İmleci normale döndür */
+}
+
+/* Tamamlanmış kod stili (isteğe bağlı, farklı renk vs.) */
+.completed-code {
+  color: #98c379; /* Örneğin, yeşilimsi bir renk */
+  /* Veya normal kod rengiyle aynı bırakılabilir: color: #abb2bf; */
 } 
