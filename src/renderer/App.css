@@ -2,61 +2,168 @@
  * @NOTE: Prepend a `~` to css file paths that are in your node_modules
  *        See https://github.com/webpack-contrib/sass-loader#imports
  */
+/* Tüm varsayılan stilleri temizle */
+
 body {
-  position: relative;
-  color: white;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: #f0f0f0; /* Açık gri arka plan */
+  display: flex;
   height: 100vh;
-  background: linear-gradient(
-    200.96deg,
-    #fedc2a -29.09%,
-    #dd5789 51.77%,
-    #7a2c9e 129.35%
-  );
-  font-family: sans-serif;
-  overflow-y: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  overflow: hidden; /* Kaydırma çubuklarını engelle */
 }
 
-button {
-  background-color: white;
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* Tüm yüksekliği kapla */
+  width: 100vw; /* Tüm genişliği kapla */
+  background-color: #ffffff; /* Beyaz ana konteyner */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Hafif gölge */
+}
+
+.chat-window {
+  flex-grow: 1; /* Mevcut alanı doldur */
+  overflow-y: auto; /* Gerektiğinde dikey kaydırma */
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Mesajlar arası boşluk */
+  background-color: #e5ddd5; /* WhatsApp benzeri arka plan */
+}
+
+.message {
+  padding: 10px 15px;
+  border-radius: 15px;
+  max-width: 70%;
+  word-wrap: break-word; /* Uzun kelimeleri kır */
+}
+
+.message.user {
+  background-color: #dcf8c6; /* Kullanıcı mesajı rengi (açık yeşil) */
+  align-self: flex-end; /* Sağa yasla */
+  border-bottom-right-radius: 5px; /* Sağ alt köşeyi düzleştir */
+}
+
+.message.ai {
+  background-color: #ffffff; /* AI mesajı rengi (beyaz) */
+  align-self: flex-start; /* Sola yasla */
+  border-bottom-left-radius: 5px; /* Sol alt köşeyi düzleştir */
+  box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+}
+
+
+.input-area {
+  display: flex;
+  padding: 10px;
+  border-top: 1px solid #ccc; /* Üst çizgi */
+  background-color: #f0f0f0; /* Giriş alanı arka planı */
+}
+
+.input-area textarea {
+  flex-grow: 1; /* Alanı doldur */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 20px; /* Yuvarlak kenarlar */
+  resize: none; /* Yeniden boyutlandırmayı engelle */
+  margin-right: 10px;
+  font-size: 1em;
+  min-height: 25px; /* Minimum yükseklik */
+  max-height: 100px; /* Maksimum yükseklik scroll olmadan */
+  overflow-y: auto; /* Gerekirse kaydırma */
+}
+
+.input-area button {
   padding: 10px 20px;
-  border-radius: 10px;
+  background-color: #007bff; /* Mavi gönder butonu */
+  color: white;
   border: none;
-  appearance: none;
-  font-size: 1.3rem;
-  box-shadow: 0px 8px 28px -6px rgba(24, 39, 75, 0.12),
-    0px 18px 88px -4px rgba(24, 39, 75, 0.14);
-  transition: all ease-in 0.1s;
+  border-radius: 20px; /* Yuvarlak kenarlar */
   cursor: pointer;
-  opacity: 0.9;
+  font-size: 1em;
 }
 
-button:hover {
-  transform: scale(1.05);
-  opacity: 1;
+.input-area button:hover {
+  background-color: #0056b3; /* Hover rengi */
 }
 
-li {
-  list-style: none;
+/* --- Yeni Eklenen Stiller --- */
+
+.two-panel-layout {
+  display: flex;
+  flex-direction: row; /* Paneller yan yana */
+  width: 100vw;
+  height: 100vh;
 }
 
-a {
-  text-decoration: none;
-  height: fit-content;
-  width: fit-content;
-  margin: 10px;
+.control-panel {
+  width: 300px; /* Sol panel genişliği */
+  min-width: 250px;
+  background-color: #f8f9fa; /* Açık renk kontrol paneli */
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #dee2e6; /* Ayırıcı çizgi */
+  overflow-y: auto; /* Gerekirse kaydırma */
 }
 
-a:hover {
-  opacity: 1;
-  text-decoration: none;
+.control-panel h3 {
+  margin-top: 0;
+  color: #495057;
 }
 
-.Hello {
+/* Input alanını kontrol paneline uygun hale getir */
+.control-panel .input-area {
+  flex-direction: column; /* Dikey dizilim */
+  padding: 0; /* Panelin kendi padding'i var */
+  border-top: none;
+  background-color: transparent;
+}
+
+.control-panel .input-area textarea {
+  margin-right: 0;
+  margin-bottom: 10px; /* Butonla arasına boşluk */
+  border-radius: 5px; /* Daha köşeli */
+}
+
+.control-panel .input-area button {
+  border-radius: 5px; /* Daha köşeli */
+}
+
+.code-editor-panel {
+  flex-grow: 1; /* Kalan alanı doldur */
+  height: 100%;
+  overflow: hidden; /* CodeEditor kendi kaydırmasını yönetecek */
+}
+
+/* Eski stilleri (chat-window, message vb.) kaldırabiliriz veya şimdilik bırakabiliriz */
+.chat-window,
+.message,
+.message.user,
+.message.ai {
+  /* display: none; */ /* Şimdilik kalsın, belki sonra kullanılır */
+}
+
+/* Yüklenme Göstergesi */
+.loading-indicator {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 20px 0;
+  height: 100%;
+  font-size: 1.2em;
+  color: #6c757d;
+  background-color: #f8f9fa; /* Kontrol paneliyle aynı arka plan */
+}
+
+/* Hata Mesajı */
+.error-message {
+  color: #dc3545; /* Kırmızı hata rengi */
+  background-color: #f8d7da; /* Açık kırmızı arka plan */
+  border: 1px solid #f5c6cb;
+  padding: 10px 15px;
+  margin-top: 15px;
+  border-radius: 5px;
+  font-size: 0.9em;
 }

@@ -1,0 +1,88 @@
+.code-editor-container {
+  position: relative; /* Gizli input'u konumlandırmak için */
+  height: 100%;
+  width: 100%;
+  background-color: #282c34; /* Koyu tema editör arka planı */
+  color: #abb2bf; /* Genel metin rengi */
+  font-family: 'Fira Code', Consolas, 'Courier New', monospace; /* Kod fontu */
+  font-size: 14px;
+  line-height: 1.5;
+  overflow: auto; /* Uzun kod için kaydırma */
+  padding: 15px;
+  box-sizing: border-box;
+  cursor: text; /* Metin imleci göster */
+}
+
+.code-display {
+  margin: 0;
+  white-space: pre-wrap; /* Satır sonlarını koru ve taşırma */
+  word-wrap: break-word;
+}
+
+.typed-code {
+  color: #e06c75; /* Yazılmış kod rengi (örneğin, kırmızımsı) */
+}
+
+.ghost-code {
+  color: #5c6370; /* Hayalet kod rengi (soluk gri) */
+  opacity: 0.7;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.caret {
+  display: inline-block;
+  width: 1px; /* Genişlik yerine border kullanmak daha iyi olabilir */
+  /* height: 1.2em; */ /* Satır yüksekliğine göre ayarlanabilir */
+  background-color: white; /* İmleç rengi */
+  margin-left: 1px;
+  margin-right: 1px;
+  animation: blink 1s infinite;
+  vertical-align: middle; /* Satır ortasına hizala */
+  /* Görüntüyü iyileştirmek için ince ayar gerekebilir */
+   height: calc(1em * 1.1); /* font-size'ın biraz fazlası */
+  position: relative;
+  top: -0.1em; /* Hafif yukarı kaydır */
+}
+
+.next-char {
+  /* background-color: rgba(255, 255, 255, 0.2); */ /* Hafif vurgu */
+  /* border-bottom: 1px solid #6c757d; */ /* Alt çizgi */
+  text-decoration: underline;
+  text-decoration-color: #6c757d; /* Alt çizgi rengi */
+  text-decoration-thickness: 1px;
+  /* color: #c8ccd4; */ /* Biraz daha parlak */
+}
+
+/*
+Gizli textarea:
+- Alanı kaplar ama görünmezdir.
+- Tüm tıklama ve klavye olaylarını yakalar.
+- Metin rengi şeffaf yapılır ki çift yazı görünmesin.
+*/
+.hidden-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  /* Debug için opacity: 0.1; yapabilirsiniz */
+  border: none;
+  background: transparent;
+  color: transparent; /* Yazı rengi şeffaf */
+  caret-color: transparent; /* Gerçek textarea imlecini gizle */
+  padding: 15px; /* Konteyner ile aynı padding */
+  margin: 0;
+  font-family: inherit; /* Konteyner fontunu kullan */
+  font-size: inherit;
+  line-height: inherit;
+  resize: none;
+  outline: none;
+  overflow: hidden; /* Kaydırma çubuğu olmasın */
+  white-space: pre; /* Girdinin pre gibi davranmasını sağla */
+  box-sizing: border-box;
+} 

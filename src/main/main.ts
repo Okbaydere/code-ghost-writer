@@ -15,6 +15,105 @@ import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 
+// --- Gemini API Entegrasyonu Başlangıç ---
+import dotenv from 'dotenv';
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold, Part } from '@google/generative-ai';
+
+// .env dosyasını yükle
+dotenv.config();
+
+const API_KEY = process.env.GEMINI_API_KEY;
+
+if (!API_KEY) {
+  console.error('Hata: GEMINI_API_KEY çevre değişkeni bulunamadı. Lütfen .env dosyasını kontrol edin.');
+  // Uygulamayı burada sonlandırmak veya kullanıcıya bir hata mesajı göstermek iyi olabilir.
+  // Şimdilik sadece konsola yazıyoruz.
+}
+
+// API İstemcisini Başlat (API_KEY varsa)
+let genAI: GoogleGenerativeAI | null = null;
+let model: any = null; // Daha spesifik tip verilebilir: GenerativeModel
+
+if (API_KEY) {
+  genAI = new GoogleGenerativeAI(API_KEY);
+  model = genAI.getGenerativeModel({
+    model: "gemini-1.5-flash", // Veya başka bir uygun model
+  });
+}
+
+// Güvenlik Ayarları (Örnek - İhtiyaca göre ayarlanmalı)
+const generationConfig = {
+  temperature: 0.9,
+  topK: 1,
+  topP: 1,
+  maxOutputTokens: 2048, // Çıktı uzunluğunu kod için ayarlayın
+};
+
+const safetySettings = [
+  { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+  { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+  { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+  { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+];
+
+// IPC Dinleyicisi: Renderer'dan gelen kod üretme isteklerini işle
+ipcMain.handle('gemini-generate', async (event, prompt: string): Promise<string> => {
+  console.log(`Ana süreçte Gemini isteği alındı: ${prompt}`);
+
+  if (!model) {
+    console.error('Gemini modeli başlatılamadı. API anahtarını kontrol edin.');
+    throw new Error('Gemini modeli başlatılamadı.'); // Hata fırlat
+  }
+
+  try {
+    const parts = [
+      { text: `Aşağıdaki isteğe göre bir kod parçası yaz: ${prompt}` }, // Prompt'u özelleştir
+    ];
+
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts }],
+      generationConfig,
+      safetySettings,
+    });
+
+    // Cevabı kontrol et ve metni al
+    if (result.response && result.response.candidates && result.response.candidates.length > 0) {
+      const candidate = result.response.candidates[0];
+      if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+        // Genellikle kod markdown formatında ```kod``` olarak dönebilir,
+        // veya sadece saf metin olarak. Şimdilik sadece text alıyoruz.
+        const generatedText = candidate.content.parts.map((part: Part) => part.text).join('');
+        console.log(`Gemini yanıtı: ${generatedText.substring(0,100)}...`); // Yanıtın başını logla
+        
+        // Markdown kod bloklarını temizlemeye çalış (basit regex)
+        const codeMatch = generatedText.match(/```(?:[a-z]+)?\n([\s\S]*?)\n```/);
+        if (codeMatch && codeMatch[1]) {
+          return codeMatch[1].trim(); // Sadece kod kısmını al
+        } else {
+          return generatedText.trim(); // Eğer blok yoksa tüm metni al
+        }
+
+      } else {
+        console.error('Gemini\'den geçerli içerik alınamadı veya engellendi.', result.response);
+        const blockReason = result.response?.promptFeedback?.blockReason;
+        throw new Error(`Gemini yanıt vermedi${blockReason ? `: ${blockReason}` : '.'}`); // Hata fırlat
+      }
+    } else {
+      console.error('Gemini\'den geçerli içerik alınamadı veya engellendi.', result.response);
+      const blockReason = result.response?.promptFeedback?.blockReason;
+      throw new Error(`Gemini yanıt vermedi${blockReason ? `: ${blockReason}` : '.'}`); // Hata fırlat
+    }
+  } catch (error) {
+    console.error('Gemini API isteği sırasında hata:', error);
+    // Hata mesajını güvenli bir şekilde al
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`API isteği başarısız: ${errorMessage}`); // Hata fırlat
+  }
+});
+
+// --- Gemini API Entegrasyonu Bitiş ---
+
+// --- AppUpdater ve mainWindow tanımlamaları ---
 class AppUpdater {
   constructor() {
     log.transports.file.level = 'info';
@@ -24,6 +123,7 @@ class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
+// --- Bitiş: AppUpdater ve mainWindow tanımlamaları ---
 
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
