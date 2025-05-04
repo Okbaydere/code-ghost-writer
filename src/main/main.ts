@@ -57,57 +57,64 @@ const safetySettings = [
 ];
 
 // IPC Dinleyicisi: Renderer'dan gelen kod üretme isteklerini işle
-ipcMain.handle('gemini-generate', async (event, prompt: string): Promise<string> => {
+ipcMain.handle('gemini-generate', async (event, prompt: string): Promise<{ filename: string; code: string }[]> => {
   console.log(`Ana süreçte Gemini isteği alındı: ${prompt}`);
-
   if (!model) {
     console.error('Gemini modeli başlatılamadı. API anahtarını kontrol edin.');
-    throw new Error('Gemini modeli başlatılamadı.'); // Hata fırlat
+    throw new Error('Gemini modeli başlatılamadı.');
   }
-
   try {
+    // Prompt'u çoklu dosya formatı isteyecek şekilde güncelleyelim
     const parts = [
-      { text: `Aşağıdaki isteğe göre bir kod parçası yaz: ${prompt}` }, // Prompt'u özelleştir
+      { text: `Aşağıdaki isteğe göre kod parçaları yaz. Eğer birden fazla dosya gerekiyorsa, her dosyayı \`\`\`dosya_adi.uzanti\n...kod...\n\`\`\` formatında ayrı bloklar halinde ver: ${prompt}` },
     ];
-
     const result = await model.generateContent({
       contents: [{ role: "user", parts }],
       generationConfig,
       safetySettings,
     });
 
-    // Cevabı kontrol et ve metni al
-    if (result.response && result.response.candidates && result.response.candidates.length > 0) {
-      const candidate = result.response.candidates[0];
-      if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-        // Genellikle kod markdown formatında ```kod``` olarak dönebilir,
-        // veya sadece saf metin olarak. Şimdilik sadece text alıyoruz.
-        const generatedText = candidate.content.parts.map((part: Part) => part.text).join('');
-        console.log(`Gemini yanıtı: ${generatedText.substring(0,100)}...`); // Yanıtın başını logla
-        
-        // Markdown kod bloklarını temizlemeye çalış (basit regex)
-        const codeMatch = generatedText.match(/```(?:[a-z]+)?\n([\s\S]*?)\n```/);
-        if (codeMatch && codeMatch[1]) {
-          return codeMatch[1].trim(); // Sadece kod kısmını al
-        } else {
-          return generatedText.trim(); // Eğer blok yoksa tüm metni al
-        }
+    if (result.response?.candidates?.[0]?.content?.parts?.length > 0) {
+      const generatedText = result.response.candidates[0].content.parts.map((part: Part) => part.text).join('');
+      console.log(`Ham Gemini yanıtı: ${generatedText.substring(0, 150)}...`);
 
+      // Çoklu dosya bloklarını ayrıştırma (Regex ile)
+      const files: { filename: string; code: string }[] = [];
+      const regex = /```(?:([a-zA-Z0-9._-]+))?\n([\s\S]*?)\n```/g;
+      let match;
+
+      while ((match = regex.exec(generatedText)) !== null) {
+        const filename = match[1] || `kod-${files.length + 1}.txt`; // Dosya adı yoksa varsayılan ata
+        const code = match[2].trim();
+        files.push({ filename, code });
+      }
+
+      // Eğer regex ile hiçbir şey bulunamadıysa, tüm metni tek dosya olarak al
+      if (files.length === 0 && generatedText.trim()) {
+        // ``` olmayan saf kod ihtimaline karşı basit temizlik
+        const cleanedText = generatedText.replace(/^```|```$/g, '').trim();
+        if (cleanedText) {
+          files.push({ filename: 'response.txt', code: cleanedText });
+        }
+      }
+
+      if (files.length > 0) {
+        console.log(`Ayrıştırılan dosyalar: ${files.map(f => f.filename).join(', ')}`);
+        return files;
       } else {
-        console.error('Gemini\'den geçerli içerik alınamadı veya engellendi.', result.response);
-        const blockReason = result.response?.promptFeedback?.blockReason;
-        throw new Error(`Gemini yanıt vermedi${blockReason ? `: ${blockReason}` : '.'}`); // Hata fırlat
+        console.warn('Gemini yanıtından ayrıştırılacak kod bloğu bulunamadı.');
+        // Boş dizi döndürmek yerine hata fırlatmak daha iyi olabilir
+        throw new Error('AI yanıtında geçerli kod bulunamadı.');
       }
     } else {
       console.error('Gemini\'den geçerli içerik alınamadı veya engellendi.', result.response);
       const blockReason = result.response?.promptFeedback?.blockReason;
-      throw new Error(`Gemini yanıt vermedi${blockReason ? `: ${blockReason}` : '.'}`); // Hata fırlat
+      throw new Error(`Gemini yanıt vermedi${blockReason ? `: ${blockReason}` : '.'}`);
     }
   } catch (error) {
     console.error('Gemini API isteği sırasında hata:', error);
-    // Hata mesajını güvenli bir şekilde al
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`API isteği başarısız: ${errorMessage}`); // Hata fırlat
+    throw new Error(`API isteği başarısız: ${errorMessage}`);
   }
 });
 

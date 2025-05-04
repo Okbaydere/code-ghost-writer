@@ -167,3 +167,58 @@ body {
   border-radius: 5px;
   font-size: 0.9em;
 }
+
+/* Dosya Listesi */
+.file-list-container {
+  margin-top: 20px;
+  border-top: 1px solid #dee2e6;
+  padding-top: 15px;
+}
+
+.file-list-container h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #495057;
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+.file-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 200px; /* Çok fazla dosya olursa kaydırma */
+  overflow-y: auto;
+}
+
+.file-list li {
+  padding: 8px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-bottom: 3px;
+  font-size: 0.9em;
+  color: #343a40;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid transparent; /* Seçili durum için yer tutucu */
+}
+
+.file-list li:hover {
+  background-color: #e9ecef;
+}
+
+.file-list li.selected {
+  background-color: #cfe2ff; /* Açık mavi seçili arka plan */
+  color: #0d6efd; /* Mavi seçili yazı rengi */
+  font-weight: 500;
+  border-color: #b6d4fe;
+}
+
+/* Sağ paneldeki hata gösterimi */
+.error-display {
+  color: #dc3545; /* Kırmızı */
+  background-color: #f8f9fa;
+  padding: 20px;
+  text-align: center;
+}

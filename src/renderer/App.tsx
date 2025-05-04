@@ -1,48 +1,66 @@
 import React, { useState } from 'react';
 import './App.css';
-import CodeEditor from './CodeEditor'; // Yeni bileşeni import edeceğiz
+import CodeEditor from './CodeEditor';
 
-// type Message = { ... } // Mesaj tipi artık gerekli değil
+// Dosya yapısı için tip tanımı
+interface CodeFile {
+  filename: string;
+  code: string;
+}
 
 export default function App() {
-  // const [messages, setMessages] = useState<Message[]>([ ... ]); // Mesaj state'i kaldırıldı
-  const [inputValue, setInputValue] = useState(''); // Giriş alanının değeri
-  const [targetCode, setTargetCode] = useState<string>(''); // Hedef kod state'i
-  const [isLoading, setIsLoading] = useState<boolean>(false); // Yüklenme durumu state'i
-  const [error, setError] = useState<string | null>(null); // Hata mesajı state'i
+  const [inputValue, setInputValue] = useState('');
+  const [files, setFiles] = useState<CodeFile[]>([]); // Gelen dosyalar
+  const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(null); // Seçili dosya indeksi
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerateCode = async () => {
     if (!inputValue.trim()) {
-      setTargetCode('');
+      setFiles([]); // Dosyaları temizle
+      setSelectedFileIndex(null); // Seçimi temizle
       setError(null);
       return;
     }
-
-    setIsLoading(true); // Yükleniyor durumunu başlat
-    setError(null); // Önceki hataları temizle
-    setTargetCode(''); // Önceki kodu temizle
+    setIsLoading(true);
+    setError(null);
+    setFiles([]); // Önceki dosyaları temizle
+    setSelectedFileIndex(null); // Seçimi temizle
 
     try {
-      // Ana sürece prompt'u gönder ve cevabı (kodu) bekle
-      // 'electron' objesi preload.ts'de tanımlandı
-      const generatedCode = await window.electron.ipcRenderer.invoke('gemini-generate', inputValue);
-      setTargetCode(generatedCode);
+      // Ana süreçten dosya dizisini bekle
+      const generatedFiles: CodeFile[] = await window.electron.ipcRenderer.invoke('gemini-generate', inputValue);
+      
+      if (generatedFiles && generatedFiles.length > 0) {
+          setFiles(generatedFiles);
+          setSelectedFileIndex(0); // İlk dosyayı seçili yap
+      } else {
+          // Ana süreç hata fırlatmalı ama yine de kontrol edelim
+          setError('AI\'dan geçerli bir kod yanıtı alınamadı.');
+      }
+
     } catch (err) {
       console.error("Kod üretme hatası:", err);
-      // Hata mesajını güvenli bir şekilde al
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(errorMessage || 'Kod üretilirken bir hata oluştu.');
-      setTargetCode(''); // Hata durumunda hedef kodu boşalt
+      setFiles([]); // Hata durumunda dosyaları temizle
+      setSelectedFileIndex(null);
     } finally {
-      setIsLoading(false); // Yükleniyor durumunu bitir
+      setIsLoading(false);
     }
-
-    setInputValue(''); // Input'u temizle
+    setInputValue('');
   };
 
+  // Dosya seçimi için handler
+  const handleFileSelect = (index: number) => {
+      setSelectedFileIndex(index);
+  };
+
+  // CodeEditor için seçili dosyanın kodunu al
+  const currentCode = selectedFileIndex !== null && files[selectedFileIndex] ? files[selectedFileIndex].code : '';
 
   return (
-    <div className="app-container two-panel-layout"> {/* Ana layout değişti */}
+    <div className="app-container two-panel-layout">
       {/* Sol Panel: Kontroller */}
       <div className="control-panel">
         <h3>Kod İste</h3>
@@ -64,16 +82,39 @@ export default function App() {
             Hata: {error}
           </div>
         )}
+
+        {/* Dosya Listesi Alanı */}
+        {files.length > 0 && !isLoading && (
+          <div className="file-list-container">
+             <h4>Üretilen Dosyalar:</h4>
+             <ul className="file-list">
+               {files.map((file, index) => (
+                  <li 
+                     key={index} 
+                     className={index === selectedFileIndex ? 'selected' : ''}
+                     onClick={() => handleFileSelect(index)}
+                  >
+                    {file.filename}
+                  </li>
+               ))}
+             </ul>
+          </div>
+        )}
       </div>
 
       {/* Sağ Panel: Kod Editörü */}
       <div className="code-editor-panel">
-         {/* Yüklenirken bir gösterge eklenebilir */} 
          {isLoading && <div className="loading-indicator">Kod üretiliyor, lütfen bekleyin...</div>} 
-         {!isLoading && !error && (
-             <CodeEditor targetCode={targetCode} />
+         {!isLoading && !error && files.length === 0 && (
+             <div className="loading-indicator">Başlamak için bir kod isteyin.</div> // Başlangıç mesajı
          )}
-         {/* Hata durumunda belki farklı bir mesaj gösterilebilir */} 
+         {!isLoading && !error && files.length > 0 && selectedFileIndex !== null && (
+             <CodeEditor targetCode={currentCode} /> // Seçili dosyanın kodunu gönder
+         )}
+         {/* Hata durumunda CodeEditor yerine hata mesajı gösterilebilir */}
+         {!isLoading && error && (
+             <div className="loading-indicator error-display">{error}</div> 
+         )}
       </div>
     </div>
   );
