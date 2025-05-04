@@ -1,0 +1,118 @@
+/* ai-live-coder/src/renderer/ChatPanel.css */
+
+.chat-panel-content {
+  /* Gelecekteki sohbet paneli stilleri buraya gelecek */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.message-list {
+  flex-grow: 1; /* Kullanılabilir alanı doldur */
+  overflow-y: auto; /* Mesajlar sığmazsa kaydır */
+  padding: 10px 15px; /* İç boşluk */
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Mesajlar arası boşluk */
+}
+
+.message {
+  padding: 8px 12px;
+  border-radius: 10px;
+  max-width: 80%;
+  word-wrap: break-word;
+  line-height: 1.4;
+  font-size: 0.9em;
+}
+
+.message.user {
+  background-color: #005c4b; /* Koyu yeşil */
+  color: #e0f2f1; /* Açık yeşilimsi yazı */
+  align-self: flex-end;
+  border-bottom-right-radius: 3px;
+}
+
+.message.ai {
+  background-color: #374151; /* Koyu gri */
+  color: #d1d5db; /* Açık gri yazı */
+  align-self: flex-start;
+  border-bottom-left-radius: 3px;
+}
+
+.message.system {
+  background-color: #4b5563; /* Orta gri */
+  color: #f3f4f6; /* Çok açık gri yazı */
+  align-self: center; /* Ortala */
+  font-style: italic;
+  font-size: 0.85em;
+  max-width: 90%;
+  text-align: center;
+}
+
+/* Yükleniyor animasyonu */
+.message.loading span {
+    display: inline-block;
+    margin: 0 1px;
+    animation: blinkDots 1.4s infinite both;
+}
+.message.loading span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+.message.loading span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+@keyframes blinkDots {
+    0%, 80%, 100% { opacity: 0; }
+    40% { opacity: 1; }
+}
+
+
+.chat-input-area {
+  display: flex;
+  padding: 10px 15px;
+  border-top: 1px solid #3e4451;
+  background-color: #1f242b; /* Biraz daha açık koyu */
+  flex-shrink: 0; /* Küçülmesini engelle */
+}
+
+.chat-input-area textarea {
+  flex-grow: 1;
+  background-color: #2c313a;
+  color: #abb2bf;
+  border: 1px solid #3e4451;
+  border-radius: 5px;
+  padding: 8px 10px;
+  resize: none;
+  margin-right: 10px;
+  font-size: 0.9em;
+  line-height: 1.4;
+  min-height: 40px; /* Tek satıra sığacak yükseklik */
+  max-height: 100px;
+  overflow-y: auto;
+  outline: none;
+}
+
+.chat-input-area textarea:focus {
+  border-color: #61afef;
+}
+
+.chat-input-area button {
+  padding: 8px 15px;
+  background-color: #61afef;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  align-self: flex-end; /* Butonu textarea altına hizala */
+}
+
+.chat-input-area button:hover:not(:disabled) {
+  background-color: #4d8dc9;
+}
+
+.chat-input-area button:disabled {
+  background-color: #3e4451;
+  cursor: not-allowed;
+  opacity: 0.7;
+} 

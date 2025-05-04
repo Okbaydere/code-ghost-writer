@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 import CodeEditor from './CodeEditor';
+import ChatPanel from './ChatPanel'; // Yeni bileşeni import et
 
 // Dosya yapısı için tip tanımı
 interface CodeFile {
@@ -9,112 +10,97 @@ interface CodeFile {
 }
 
 export default function App() {
-  const [inputValue, setInputValue] = useState('');
-  const [files, setFiles] = useState<CodeFile[]>([]); // Gelen dosyalar
-  const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(null); // Seçili dosya indeksi
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [prompt, setPrompt] = useState('');
+  const [targetCode, setTargetCode] = useState(''); // Editor için hedef kod
+  // Birden fazla dosya olabileceğinden, dosya listesini tutalım
+  const [generatedFiles, setGeneratedFiles] = useState<{ filename: string; code: string }[]>([]);
+  const [selectedFileIndex, setSelectedFileIndex] = useState<number>(0); // Seçili dosya indeksi
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleGenerateCode = async () => {
-    if (!inputValue.trim()) {
-      setFiles([]); // Dosyaları temizle
-      setSelectedFileIndex(null); // Seçimi temizle
-      setError(null);
-      return;
-    }
+  const handleGenerate = async () => {
     setIsLoading(true);
     setError(null);
-    setFiles([]); // Önceki dosyaları temizle
-    setSelectedFileIndex(null); // Seçimi temizle
-
+    setGeneratedFiles([]); // Önceki sonuçları temizle
+    setTargetCode(''); // Editörü temizle
     try {
-      // Ana süreçten dosya dizisini bekle
-      const generatedFiles: CodeFile[] = await window.electron.ipcRenderer.invoke('gemini-generate', inputValue);
-      
-      if (generatedFiles && generatedFiles.length > 0) {
-          setFiles(generatedFiles);
-          setSelectedFileIndex(0); // İlk dosyayı seçili yap
+      // Main process'teki Gemini handler'ını çağır
+      const files = await window.electron.ipcRenderer.invoke('gemini-generate', prompt);
+      if (files && files.length > 0) {
+        setGeneratedFiles(files);
+        setSelectedFileIndex(0); // İlk dosyayı seçili yap
+        setTargetCode(files[0].code); // İlk dosyanın kodunu editöre yükle
       } else {
-          // Ana süreç hata fırlatmalı ama yine de kontrol edelim
-          setError('AI\'dan geçerli bir kod yanıtı alınamadı.');
+        const errorMsg = "AI'dan gecerli bir kod alinamadi.";
+        setError(errorMsg);
       }
-
-    } catch (err) {
-      console.error("Kod üretme hatası:", err);
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      setError(errorMessage || 'Kod üretilirken bir hata oluştu.');
-      setFiles([]); // Hata durumunda dosyaları temizle
-      setSelectedFileIndex(null);
+    } catch (err: any) {
+      console.error('IPC hatası veya Gemini hatası:', err);
+      const defaultError = 'Kod uretilirken bir hata olustu.';
+      setError(err?.message ? String(err.message) : defaultError);
     } finally {
       setIsLoading(false);
     }
-    setInputValue('');
   };
 
-  // Dosya seçimi için handler
+  // Dosya seçimi değiştiğinde
   const handleFileSelect = (index: number) => {
-      setSelectedFileIndex(index);
+    if (index >= 0 && index < generatedFiles.length) {
+        setSelectedFileIndex(index);
+        setTargetCode(generatedFiles[index].code);
+        // İleride: Seçili dosya değiştiğinde Chat paneline bilgi verilebilir
+    }
   };
-
-  // CodeEditor için seçili dosyanın kodunu al
-  const currentCode = selectedFileIndex !== null && files[selectedFileIndex] ? files[selectedFileIndex].code : '';
 
   return (
-    <div className="app-container two-panel-layout">
-      {/* Sol Panel: Kontroller */}
-      <div className="control-panel">
-        <h3>Kod İste</h3>
-        <div className="input-area">
-          <textarea
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Bir kod parçası isteyin (örn: python list comprehension örneği)"
-            rows={3}
-            disabled={isLoading} // Yüklenirken input'u devre dışı bırak
-          />
-          <button onClick={handleGenerateCode} disabled={isLoading}> {/* Yüklenirken butonu devre dışı bırak */}
-            {isLoading ? 'Üretiliyor...' : 'Oluştur'} {/* Buton metnini değiştir */}
-          </button>
-        </div>
-        {/* Hata Mesajı Alanı */}
-        {error && (
-          <div className="error-message">
-            Hata: {error}
-          </div>
-        )}
+    <div className="app-container">
+      {/* Sol Panel: İstek Girişi */}
+      <div className="panel request-panel">
+        <h2>Kod İsteği</h2>
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder='Üretmek istediğiniz kodu açıklayın (örneğin, "javascript ile basit bir butona tıklama olayı ekle")'
+          rows={5}
+          disabled={isLoading}
+        />
+        <button onClick={handleGenerate} disabled={isLoading || !prompt.trim()}>
+          {isLoading ? 'Üretiliyor...' : 'Üret'}
+        </button>
+        {error && <p className="error-message">Hata: {error}</p>}
 
-        {/* Dosya Listesi Alanı */}
-        {files.length > 0 && !isLoading && (
-          <div className="file-list-container">
-             <h4>Üretilen Dosyalar:</h4>
-             <ul className="file-list">
-               {files.map((file, index) => (
-                  <li 
-                     key={index} 
-                     className={index === selectedFileIndex ? 'selected' : ''}
-                     onClick={() => handleFileSelect(index)}
-                  >
-                    {file.filename}
-                  </li>
-               ))}
-             </ul>
+        {/* Dosya Listesi (birden fazla dosya varsa göster) */}
+        {generatedFiles.length > 1 && (
+          <div className="file-list">
+            <h4>Üretilen Dosyalar:</h4>
+            <ul>
+              {generatedFiles.map((file, index) => (
+                <li
+                  key={index}
+                  className={index === selectedFileIndex ? 'selected' : ''}
+                  onClick={() => handleFileSelect(index)}
+                >
+                  {file.filename}
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </div>
 
-      {/* Sağ Panel: Kod Editörü */}
-      <div className="code-editor-panel">
-         {isLoading && <div className="loading-indicator">Kod üretiliyor, lütfen bekleyin...</div>} 
-         {!isLoading && !error && files.length === 0 && (
-             <div className="loading-indicator">Başlamak için bir kod isteyin.</div> // Başlangıç mesajı
-         )}
-         {!isLoading && !error && files.length > 0 && selectedFileIndex !== null && (
-             <CodeEditor targetCode={currentCode} /> // Seçili dosyanın kodunu gönder
-         )}
-         {/* Hata durumunda CodeEditor yerine hata mesajı gösterilebilir */}
-         {!isLoading && error && (
-             <div className="loading-indicator error-display">{error}</div> 
-         )}
+      {/* Orta Panel: Kod Editörü */}
+      <div className="panel editor-panel">
+        {/* Dosya adı başlığı (tek dosya varsa veya seçiliyse) */}
+        {generatedFiles.length > 0 && (
+             <h3>{generatedFiles[selectedFileIndex]?.filename || 'Kod Editörü'}</h3>
+        )}
+        <CodeEditor targetCode={targetCode} />
+      </div>
+
+      {/* Sağ Panel: Sohbet/Açıklama */}
+      <div className="panel chat-panel">
+         <h2>Açıklama / Sohbet</h2>
+         <ChatPanel currentCode={targetCode} /> 
       </div>
     </div>
   );

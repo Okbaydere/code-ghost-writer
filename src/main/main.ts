@@ -37,7 +37,7 @@ let model: any = null; // Daha spesifik tip verilebilir: GenerativeModel
 if (API_KEY) {
   genAI = new GoogleGenerativeAI(API_KEY);
   model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash", // Veya başka bir uygun model
+    model: "gemini-2.5-pro-exp-03-25", // Modeli güncelle
   });
 }
 
@@ -115,6 +115,58 @@ ipcMain.handle('gemini-generate', async (event, prompt: string): Promise<{ filen
     console.error('Gemini API isteği sırasında hata:', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`API isteği başarısız: ${errorMessage}`);
+  }
+});
+
+// IPC Dinleyicisi: Renderer'dan gelen kod açıklama isteklerini işle
+ipcMain.handle('gemini-explain', async (event, codeSnippet: string, question: string): Promise<string> => {
+  console.log(`Ana süreçte Gemini açıklama isteği alındı: "${question}"`);
+  if (!model) {
+    console.error('Gemini modeli başlatılamadı. API anahtarını kontrol edin.');
+    throw new Error('Gemini modeli başlatılamadı.');
+  }
+  if (!codeSnippet || !question) {
+    console.warn('Açıklama isteği için kod parçası veya soru eksik.');
+    throw new Error('Kod parçası veya soru eksik.');
+  }
+
+  try {
+    // Gemini'ye gönderilecek prompt'u oluştur
+    const parts = [
+      { text: `Aşağıdaki kod parçasını incele:
+\`\`\`
+${codeSnippet}
+\`\`\`
+
+Şimdi şu soruyu yanıtla: ${question}` },
+    ];
+
+    // Açıklama için daha yüksek token limiti olan config
+    const explanationGenerationConfig = {
+        ...generationConfig, // Diğer ayarları devral
+        maxOutputTokens: 8192, // Açıklama için daha yüksek limit
+    };
+
+    // Not: Güvenlik ayarları aynı kalabilir mi?
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts }],
+      generationConfig: explanationGenerationConfig, // Yeni config'i kullan
+      safetySettings,   // Mevcut ayarlar
+    });
+
+    if (result.response?.candidates?.[0]?.content?.parts?.length > 0) {
+      const explanation = result.response.candidates[0].content.parts.map((part: Part) => part.text).join('');
+      console.log(`Gemini açıklama yanıtı: ${explanation.substring(0, 100)}...`);
+      return explanation;
+    } else {
+      console.error('Gemini\'den açıklama için geçerli içerik alınamadı veya engellendi.', result.response);
+      const blockReason = result.response?.promptFeedback?.blockReason;
+      throw new Error(`Gemini açıklama yanıtı vermedi${blockReason ? `: ${blockReason}` : '.'}`);
+    }
+  } catch (error) {
+    console.error('Gemini açıklama isteği sırasında hata:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Açıklama API isteği başarısız: ${errorMessage}`);
   }
 });
 

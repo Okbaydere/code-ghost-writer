@@ -3,14 +3,14 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 
 // Kanal isimlerini daha belirgin hale getirelim
-export type IpcChannel = 'ipc-example' | 'gemini-generate';
+export type Channels = 'ipc-example' | 'gemini-generate' | 'gemini-explain';
 
 const electronHandler = {
   ipcRenderer: {
-    sendMessage(channel: IpcChannel, ...args: unknown[]) {
+    sendMessage(channel: Channels, ...args: unknown[]) {
       ipcRenderer.send(channel, ...args);
     },
-    on(channel: IpcChannel, func: (...args: unknown[]) => void) {
+    on(channel: Channels, func: (...args: unknown[]) => void) {
       const subscription = (_event: IpcRendererEvent, ...args: unknown[]) =>
         func(...args);
       ipcRenderer.on(channel, subscription);
@@ -19,12 +19,15 @@ const electronHandler = {
         ipcRenderer.removeListener(channel, subscription);
       };
     },
-    once(channel: IpcChannel, func: (...args: unknown[]) => void) {
+    once(channel: Channels, func: (...args: unknown[]) => void) {
       ipcRenderer.once(channel, (_event, ...args) => func(...args));
     },
     // İstek-cevap modeli için invoke ekleyelim
-    invoke(channel: IpcChannel, ...args: unknown[]): Promise<any> {
-       return ipcRenderer.invoke(channel, ...args);
+    invoke(channel: 'gemini-generate' | 'gemini-explain', ...args: any[]): Promise<any> {
+      if (['gemini-generate', 'gemini-explain'].includes(channel)) {
+        return ipcRenderer.invoke(channel, ...args);
+      }
+      return Promise.reject(new Error(`Invalid invoke channel: ${channel}`));
     }
   },
 };

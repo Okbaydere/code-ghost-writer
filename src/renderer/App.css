@@ -16,11 +16,9 @@ body {
 
 .app-container {
   display: flex;
-  flex-direction: column;
-  height: 100vh; /* Tüm yüksekliği kapla */
-  width: 100vw; /* Tüm genişliği kapla */
-  background-color: #ffffff; /* Beyaz ana konteyner */
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Hafif gölge */
+  height: 100vh; /* Tüm pencere yüksekliği */
+  width: 100vw; /* Tüm pencere genişliği */
+  overflow: hidden; /* Kaydırmayı panellere bırak */
 }
 
 .chat-window {
@@ -221,4 +219,152 @@ body {
   background-color: #f8f9fa;
   padding: 20px;
   text-align: center;
+}
+
+/* Tüm Paneller İçin Ortak Stiller */
+.panel {
+  height: 100%; /* Paneller tam yükseklikte */
+  overflow-y: auto; /* Gerektiğinde dikey kaydırma */
+  padding: 15px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column; /* İçerik dikey aksın */
+}
+
+/* Panel Özel Stilleri ve Genişlikleri */
+.request-panel {
+  flex: 0 0 30%; /* Sabit genişlik, büyümez, küçülmez */
+  background-color: #21252b; /* Biraz farklı bir ton */
+  border-right: 1px solid #181a1f;
+}
+
+.editor-panel {
+  flex: 1 1 auto; /* Esnek, kalan alanı kaplar */
+  background-color: #282c34;
+  padding: 0; /* CodeEditor kendi padding'ine sahip olabilir */
+}
+
+.chat-panel {
+  flex: 0 0 35%; /* Sabit genişlik */
+  background-color: #21252b;
+  border-left: 1px solid #181a1f;
+}
+
+/* Request Panel İçeriği */
+.request-panel h2,
+.chat-panel h2,
+.editor-panel h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #abb2bf;
+  flex-shrink: 0; /* Başlıkların küçülmesini engelle */
+}
+
+.request-panel textarea {
+  width: 100%;
+  margin-bottom: 10px;
+  background-color: #2c313a;
+  color: #abb2bf;
+  border: 1px solid #3e4451;
+  border-radius: 4px;
+  padding: 8px;
+  box-sizing: border-box;
+  resize: vertical; /* Sadece dikey boyutlandırma */
+  min-height: 80px;
+  flex-shrink: 0;
+}
+
+.request-panel button {
+  padding: 8px 15px;
+  background-color: #61afef; /* Mavi tonu */
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  align-self: flex-start; /* Butonu sola yasla */
+  flex-shrink: 0;
+}
+
+.request-panel button:hover:not(:disabled) {
+  background-color: #4d8dc9;
+}
+
+.request-panel button:disabled {
+  background-color: #3e4451;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Dosya Listesi Stilleri */
+.file-list {
+  margin-top: 20px;
+  border-top: 1px solid #3e4451;
+  padding-top: 15px;
+  flex-grow: 1; /* Kalan alanı doldur (isteğe bağlı) */
+  overflow-y: auto; /* Liste uzunsa kaydır */
+}
+
+.file-list h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #9da5b4;
+}
+
+.file-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.file-list li {
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 3px;
+  margin-bottom: 3px;
+  transition: background-color 0.2s ease;
+  color: #abb2bf;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-list li:hover {
+  background-color: #3a3f4b;
+}
+
+.file-list li.selected {
+  background-color: #4a505a; /* Seçili dosya arka planı */
+  color: #ffffff;
+  font-weight: bold;
+}
+
+/* Hata Mesajı Stili */
+.error-message {
+  color: #e06c75; /* Kırmızımsı hata rengi */
+  margin-top: 10px;
+  font-size: 0.9em;
+  flex-shrink: 0;
+}
+
+/* Editor Panel İçeriği */
+.editor-panel h3 {
+  padding: 10px 15px; /* Başlık için padding */
+  background-color: #21252b; /* Panel başlık arka planı */
+  border-bottom: 1px solid #181a1f;
+  font-size: 0.9em;
+  color: #9da5b4;
+}
+
+/* CodeEditor bileşeni editor panelinin kalan alanını doldurmalı */
+/* Eğer CodeEditor kendi yüksekliğini %100 yapmıyorsa:
+.editor-panel .code-editor-container { 
+  flex-grow: 1;
+}
+*/
+
+/* Chat Panel İçeriği */
+.chat-panel .chat-panel-content {
+  flex-grow: 1; /* ChatPanel'in içeriği kalan alanı doldursun */
+  /* ChatPanel.css içindeki stiller burayı dolduracak */
 }

@@ -33,19 +33,41 @@
   50% { opacity: 0; }
 }
 
+.caret-container {
+  position: relative; /* İçindeki absolute konumlandırma için */
+  display: inline-block; /* Yan yana gelmeyi bozmamak için */
+}
+
 .caret {
-  display: inline-block;
-  width: 1px; /* Genişlik yerine border kullanmak daha iyi olabilir */
-  /* height: 1.2em; */ /* Satır yüksekliğine göre ayarlanabilir */
-  background-color: white; /* İmleç rengi */
-  margin-left: 1px;
-  margin-right: 1px;
-  animation: blink 1s infinite;
-  vertical-align: middle; /* Satır ortasına hizala */
-  /* Görüntüyü iyileştirmek için ince ayar gerekebilir */
-   height: calc(1em * 1.1); /* font-size'ın biraz fazlası */
-  position: relative;
-  top: -0.1em; /* Hafif yukarı kaydır */
+  display: inline-block; /* Varsa boyutunu koruması için */
+  width: 1px;
+  height: 1.2em; /* Satır yüksekliğine uygun */
+  background-color: #f0f0f0; /* Veya tema rengi */
+  vertical-align: bottom; /* Metinle hizalamak için */
+  margin-left: -1px; /* typed-code ile üst üste binmemesi için */
+  opacity: 1;
+  animation: blink 1s step-end infinite;
+}
+
+/* İmleç titreme animasyonu */
+.shake .caret {
+  animation: blink 1s step-end infinite, shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* Yanlış tuş göstergesi */
+.wrong-key-display {
+  position: absolute;
+  bottom: 100%; /* İmlecin tam üstüne */
+  left: 50%;
+  transform: translateX(-50%); /* Ortalamak için */
+  background-color: rgba(255, 0, 0, 0.8); /* Kırmızı arka plan */
+  color: white;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 0.8em;
+  white-space: nowrap; /* Tuş adının tek satırda kalması için */
+  z-index: 10; /* Diğer elemanların üstünde */
+  margin-bottom: 3px; /* İmleçten biraz boşluk */
 }
 
 .next-char {
@@ -55,6 +77,7 @@
   text-decoration-color: #6c757d; /* Alt çizgi rengi */
   text-decoration-thickness: 1px;
   /* color: #c8ccd4; */ /* Biraz daha parlak */
+  opacity: 0.7;
 }
 
 /*
@@ -117,4 +140,20 @@ Gizli textarea:
 .completed-code {
   color: #98c379; /* Örneğin, yeşilimsi bir renk */
   /* Veya normal kod rengiyle aynı bırakılabilir: color: #abb2bf; */
+}
+
+/* Titreme animasyonu */
+@keyframes shake {
+  10%, 90% {
+    transform: translate3d(-1px, 0, 0);
+  }
+  20%, 80% {
+    transform: translate3d(2px, 0, 0);
+  }
+  30%, 50%, 70% {
+    transform: translate3d(-3px, 0, 0);
+  }
+  40%, 60% {
+    transform: translate3d(3px, 0, 0);
+  }
 } 
